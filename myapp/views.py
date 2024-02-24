@@ -1,5 +1,8 @@
 from rest_framework import generics, permissions, response, status
-
+from django.shortcuts import get_object_or_404
+import requests
+from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 from .models import *
 from .serializers import *
 
@@ -59,14 +62,33 @@ class RoomImageAPIView(generics.ListCreateAPIView):
         serializer.save(user=self.request.user, room_id=room_id)
 
 
+def hitting_external_api(id):
+    external_api_url = 'http://localhost:8089/api/v1/spatial-data/insert-into-quad-tree'
+    try:
+        headers = {
+            "Request-Key": "abc123"
+        }
+        params = {'id': id}
+        response = requests.get(external_api_url, headers=headers, params=params)
+        if response.status_code == 200:
+            print("Request was Successful")
+        else:
+            print("Request was not Successful")
+    except requests.exceptions.RequestException as e:
+        print(f"Error: {e}")
+        print("Request was not Successful")
+
+
 class LocationCreateAPIView(generics.CreateAPIView):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        room_id = self.request.data.get('room_id')
-        serializer.save(room=room_id)
+        room_id = self.request.data.get('room')
+        room = get_object_or_404(Room, id=room_id)
+        location = serializer.save(room=room)
+        hitting_external_api(location.id)
 
 
 class RentedRoomImageAPIView(generics.ListCreateAPIView):

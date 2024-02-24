@@ -10,6 +10,7 @@ django-cors-headers = "*"
 pillow = "*"
 djangorestframework-simplejwt = "*"
 psycopg = "*"
+requests = "*"
 
 [dev-packages]
 
