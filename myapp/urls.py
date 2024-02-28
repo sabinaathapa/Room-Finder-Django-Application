@@ -7,5 +7,8 @@ urlpatterns = [
     path('room-create/', RoomAPIView.as_view(), name='room-create'),
     path('room-image/', RoomImageAPIView.as_view(), name='room-image'),
     path('location/', LocationCreateAPIView.as_view(), name='location'),
-    
+    path('search_location/', SearchAPIView.as_view(), name='search-location'),
+
+
+
 ]

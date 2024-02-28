@@ -1,10 +1,13 @@
+from uuid import UUID
+from django.core.serializers import serialize
 from rest_framework import generics, permissions, response, status
 from django.shortcuts import get_object_or_404
 import requests
-from rest_framework.exceptions import ValidationError
-from rest_framework.response import Response
+from django.http import JsonResponse
 from .models import *
 from .serializers import *
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 
 class UserProfilePictureView(generics.CreateAPIView):
@@ -99,3 +102,49 @@ class RentedRoomImageAPIView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         room_id = self.request.data.get('room_id')
 # TODO: Complete View and add urls
+
+
+class SearchAPIView(APIView):
+    def get(self, request):
+        lat = self.request.query_params.get('lat')
+        lon = self.request.query_params.get('lon')
+        search_radius = self.request.query_params.get('search_radius')
+        if lat and lon and search_radius is None:
+            return Response("Latitude, Longitude and Search radius is required.")
+
+        external_api_url = "http://localhost:8089/api/v1/spatial-data/get-nearest-rooms"
+        try:
+            headers = {"Request-Key": "abc123"}
+            params = {'lat': lat, 'long': lon, 'searchRadiusInKm': search_radius}
+            response = requests.get(external_api_url, params=params, headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                uuids = [item['uuid'] for item in data]
+
+                # Convert UUID strings to UUID objects
+                uuid_objects = [UUID(uuid_str) for uuid_str in uuids]
+
+                # Query the database for records with these UUIDs
+                return_data = []
+                for uuid_object in uuid_objects:
+                    location_with_room = Location.objects.filter(id=uuid_object).prefetch_related('room__room_images').first()
+                    serialized_data = {
+                        'location': serialize('json', [location_with_room], use_natural_foreign_keys=True),
+                        'room': serialize('json', [location_with_room.room], use_natural_foreign_keys=True),
+                        'image': serialize('json', location_with_room.room.room_images.all())
+                    }
+                    return_data.append(serialized_data)
+                return JsonResponse(return_data, safe=False)
+                # return Response(return_data)
+            else:
+                request_fail = "Request was not successful."
+                print(request_fail)
+                return Response(request_fail, status=500)
+        except requests.exceptions.RequestException as e:
+            print(f"Error: {e}")
+            failure_message = "Request was not Successful"
+            print(failure_message)
+            return Response(failure_message, status=500)
+
+
+

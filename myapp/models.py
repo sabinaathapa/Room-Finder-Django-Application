@@ -68,7 +68,7 @@ class Location(models.Model):
     name = models.CharField(max_length=200)
     latitude = models.DecimalField(max_digits=40, decimal_places=30)
     longitude = models.DecimalField(max_digits=40, decimal_places=30)
-    room = models.OneToOneField(Room, on_delete=models.CASCADE)
+    room = models.OneToOneField(Room, on_delete=models.CASCADE, related_name='room')
 
     def __str__(self):
         return f"Location {self.id}"
