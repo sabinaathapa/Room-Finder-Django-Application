@@ -66,9 +66,9 @@ class RoomImage(models.Model):
 class Location(models.Model):
     id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
     name = models.CharField(max_length=200)
-    latitude = models.DecimalField(max_digits=15, decimal_places=10)
-    longitude = models.DecimalField(max_digits=15, decimal_places=10)
-    room = models.OneToOneField(Room, on_delete=models.CASCADE)
+    latitude = models.DecimalField(max_digits=40, decimal_places=30)
+    longitude = models.DecimalField(max_digits=40, decimal_places=30)
+    room = models.OneToOneField(Room, on_delete=models.CASCADE, related_name='room')
 
     def __str__(self):
         return f"Location {self.id}"
@@ -78,7 +78,8 @@ class RentedRoom(models.Model):
     class StatusType(models.TextChoices):
         ACCEPTED = "ACCEPTED", "Accepted"
         REJECTED = "REJECTED", "Rejected"
-        IN_PROCESS = "IN_PROCESS", "In Process"
+        PENDING = "Pending", "Pending"
+        CANCELLED = "CANCELLED", "Cancelled"
 
     id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
     room_id = models.ForeignKey(Room, on_delete=models.CASCADE)
