@@ -153,12 +153,11 @@ class SearchAPIView(APIView):
 
 
 #################### OWNER"S ####################
-#Get the rooms Created By that Owner.
+# Get the rooms Created By that Owner.
 class GetOwnerCreatedRoomAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        # status_param = request.query_params.get('status')
         userId = request.user.id
 
         allRooms = Room.objects.filter(user_id=userId).prefetch_related()
@@ -173,11 +172,10 @@ class GetOwnerCreatedRoomAPIView(APIView):
             rooms_list.append(
                 {'id': room.id, 'roomType': room.room_type,
                  'noOfRooms': room.no_of_room, 'user_id': room.user_id,
-                 'bathroomTypes': room.bathroom_type, 'kitchenSlab': room.kitchen_slab,
+                 'bathroomType': room.bathroom_type, 'kitchenSlab': room.kitchen_slab,
                  'wifi': room.wifi, 'waterType': room.water_type,
                  'imageLink': str(image_link.room_image),
-                 'latitude': roomLocation.latitude,
-                 'longitude': roomLocation.longitude,
+                 'coordinates': str(roomLocation.latitude) + ", " + str(roomLocation.longitude),
                  'locationName': roomLocation.name
                  }
             )
@@ -185,10 +183,13 @@ class GetOwnerCreatedRoomAPIView(APIView):
         # Return the JsonResponse with a dictionary containing the list
         return JsonResponse({'rooms': rooms_list}, safe=False)
 
-#Get the rooms booked for that owner
+
+# Get the rooms booked for that owner
 class GetBookingRequestRoomAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request):
-        #Extracting data from params
+        # Extracting data from params
         userId = request.user.id
         status = request.query_params.get('status')
 
@@ -213,11 +214,10 @@ class GetBookingRequestRoomAPIView(APIView):
                  # 'latitude': roomLocation.latitude,
                  # 'longitude': roomLocation.longitude,
                  # 'locationName': roomLocation.name
-                 'tenantEmail':tenantDetails.email,
-                 'tenantPhone':tenantDetails.phone,
-                 'tenant':tenantDetails.address
+                 'tenantEmail': tenantDetails.email,
+                 'tenantPhone': tenantDetails.phone,
+                 'tenant': tenantDetails.address
                  }
             )
 
         return JsonResponse(returnData, safe=False)
-
