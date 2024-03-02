@@ -100,7 +100,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'room_finder_db',
         'USER': 'postgres',
-        'PASSWORD': 'root',
+        'PASSWORD': 'abc123',
         'HOST' : 'localhost',
         'PORT' : '5432',      
     }
