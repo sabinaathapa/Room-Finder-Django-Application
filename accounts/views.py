@@ -51,13 +51,17 @@ class LoginAPIView(generics.CreateAPIView):
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
 
+            usersRole = Role.objects.get(id=user.role_id)
+
             response_data = {
                 "status": status.HTTP_200_OK,
                 "message": "success",
                 "data": {
                     "access_token": access_token,
                     "refresh_token": str(refresh),
-                }
+                    "userRole": usersRole.name
+                },
+
             }
             return Response(response_data, status=status.HTTP_200_OK)
         else:
