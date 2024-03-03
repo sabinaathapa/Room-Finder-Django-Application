@@ -7,6 +7,7 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.http import JsonResponse
+from rest_framework.views import APIView
 
 
 class OwnerSignUpView(generics.CreateAPIView):
@@ -78,3 +79,19 @@ class Getuserroleview(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         user_role = request.user.role.name if request.user.role else None
         return JsonResponse({'role': user_role})
+
+
+class GetUserdetailsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        returnData = [{
+            "username": user.username,
+            "email": user.email,
+            "phone": user.phone,
+            "address": user.address
+        }]
+
+        return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
