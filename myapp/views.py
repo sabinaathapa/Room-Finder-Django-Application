@@ -33,17 +33,14 @@ class DocumentUploadView(generics.CreateAPIView):
 class RoomAPIView(generics.ListCreateAPIView):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         room_serializer = self.get_serializer(data=request.data)
-        # print(request.data)
         room_serializer.is_valid(raise_exception=True)
-
-        # room_id = request.data.get('room_id')
         self.perform_create(room_serializer)
 
         # Get the created room instance
@@ -60,7 +57,8 @@ class RoomAPIView(generics.ListCreateAPIView):
 class RoomImageAPIView(generics.ListCreateAPIView):
     queryset = RoomImage.objects.all()
     serializer_class = RoomImageSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
+
 
     def perform_create(self, serializer):
         room_id = self.request.data.get('room')
@@ -84,10 +82,11 @@ def hitting_external_api(id):
         print("Request was not Successful")
 
 
-class LocationCreateAPIView(generics.CreateAPIView):
+class LocationCreateAPIView(generics.ListCreateAPIView):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
+
 
     def perform_create(self, serializer):
         room_id = self.request.data.get('room')
