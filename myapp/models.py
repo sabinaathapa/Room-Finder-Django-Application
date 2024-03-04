@@ -87,7 +87,7 @@ class RentedRoom(models.Model):
     tenant_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tenant')
     booking_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=StatusType.choices, default="")
-    rented_date = models.DateTimeField(auto_now_add=True)
+    rented_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     released_date = models.DateField()
 
     def __str__(self):

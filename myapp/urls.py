@@ -9,5 +9,7 @@ urlpatterns = [
     path('location/', LocationCreateAPIView.as_view(), name='location'),
     path('search_location/', SearchAPIView.as_view(), name='search-location'),
     path('get-created-room/', GetOwnerCreatedRoomAPIView.as_view(), name='get-owner-created-room'),
-    path('get-booking-request/',GetBookingRequestRoomAPIView.as_view(), name='get-booking-request')
+    path('get-booking-request/',GetBookingRequestRoomAPIView.as_view(), name='get-booking-request'),
+    path('accept-booking-request/', AcceptBookingRequestView.as_view(), name='accept-booking-request'),
+    path('reject-booking-request/', RejectBookingRequestView.as_view(), name='reject-booking-request')
 ]

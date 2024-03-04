@@ -201,23 +201,49 @@ class GetBookingRequestRoomAPIView(APIView):
             roomDetails = Room.objects.get(id=room.room_id_id)
             imageLink = RoomImage.objects.filter(room_id=room.room_id_id).get()
             tenantDetails = User.objects.filter(id=room.tenant_id_id).get()
+            roomLocation = Location.objects.filter(room_id=room.room_id_id).get()
 
             returnData.append(
                 {'roomId': roomDetails.id,
                  'bookingTableId': room.id,
                  'roomType': roomDetails.room_type,
                  'noOfRooms': roomDetails.no_of_room,
-                 'bathroomTypes': roomDetails.bathroom_type,
+                 'bathroomType': roomDetails.bathroom_type,
                  'kitchenSlab': roomDetails.kitchen_slab,
-                 'wifi': roomDetails.wifi, 'waterType': roomDetails.water_type,
+                 'wifi': roomDetails.wifi,
+                 'waterType': roomDetails.water_type,
                  'imageLink': str(imageLink.room_image),
-                 # 'latitude': roomLocation.latitude,
-                 # 'longitude': roomLocation.longitude,
-                 # 'locationName': roomLocation.name
+                 'latitude': roomLocation.latitude,
+                 'longitude': roomLocation.longitude,
+                 'locationName': roomLocation.name,
                  'tenantEmail': tenantDetails.email,
                  'tenantPhone': tenantDetails.phone,
-                 'tenant': tenantDetails.address
+                 'tenantName': tenantDetails.first_name + " " + tenantDetails.last_name,
+                 'tenantAddress': tenantDetails.address,
+                 'status':room.status
                  }
             )
 
         return JsonResponse(returnData, safe=False)
+
+#Accept the Booking Request
+class AcceptBookingRequestView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        bookingTableId = request.query_params.get('roomBookId')
+        roomBookingDetails = RentedRoom.objects.filter(id=bookingTableId).get()
+
+        roomBookingDetails.status = "ACCEPTED"
+        serializer = RentedRoomSerializer()
+        serializer.save(room=roomBookingDetails)
+        return JsonResponse("Room Booking Accepted", safe=False)
+
+
+
+class RejectBookingRequestView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+
+        return "class"
