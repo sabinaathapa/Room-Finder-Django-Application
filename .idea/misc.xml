@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Pipenv (Backend Room Finder)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12 (DjangoApplication)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Pipenv (Backend Room Finder)" project-jdk-type="Python SDK" />
 </project>

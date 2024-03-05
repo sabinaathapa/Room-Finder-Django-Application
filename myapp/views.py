@@ -1,3 +1,4 @@
+from datetime import timezone
 from uuid import UUID
 from django.core.serializers import serialize
 from rest_framework import generics, permissions, response, status
@@ -33,6 +34,7 @@ class DocumentUploadView(generics.CreateAPIView):
 class RoomAPIView(generics.ListCreateAPIView):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
+
     # permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
@@ -57,8 +59,8 @@ class RoomAPIView(generics.ListCreateAPIView):
 class RoomImageAPIView(generics.ListCreateAPIView):
     queryset = RoomImage.objects.all()
     serializer_class = RoomImageSerializer
-    # permission_classes = [permissions.IsAuthenticated]
 
+    # permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
         room_id = self.request.data.get('room')
@@ -85,8 +87,8 @@ def hitting_external_api(id):
 class LocationCreateAPIView(generics.ListCreateAPIView):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
-    # permission_classes = [permissions.IsAuthenticated]
 
+    # permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
         room_id = self.request.data.get('room')
@@ -95,16 +97,18 @@ class LocationCreateAPIView(generics.ListCreateAPIView):
         hitting_external_api(location.id)
 
 
-class RentedRoomImageAPIView(generics.ListCreateAPIView):
+class RentedRoomCreate(generics.CreateAPIView):
     queryset = RentedRoom.objects.all()
     serializer_class = RentedRoomSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
+        serializer.validated_data['tenant_id'] = self.request.user
         room_id = self.request.data.get('room_id')
-
-
-# TODO: Complete View and add urls
+        room = Room.objects.get(id=room_id)
+        serializer.validated_data['owner_id'] = room.user
+        # serializer.validated_data['booking_date'] = timezone.now()
+        serializer.save()
 
 
 class SearchAPIView(APIView):
@@ -219,23 +223,28 @@ class GetBookingRequestRoomAPIView(APIView):
                  'tenantPhone': tenantDetails.phone,
                  'tenantName': tenantDetails.first_name + " " + tenantDetails.last_name,
                  'tenantAddress': tenantDetails.address,
-                 'status':room.status
+                 'status': room.status
                  }
             )
 
         return JsonResponse(returnData, safe=False)
 
-#Accept the Booking Request
+
+# Accept the Booking Request
 class AcceptBookingRequestView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         bookingTableId = request.query_params.get('roomBookId')
-        roomBookingDetails = RentedRoom.objects.filter(id=bookingTableId).get()
+
+        try:
+            roomBookingDetails = RentedRoom.objects.get(id=bookingTableId)
+        except RentedRoom.DoesNotExist:
+            return JsonResponse({"error": "Room booking not found"}, status=404)
 
         roomBookingDetails.status = "ACCEPTED"
-        serializer = RentedRoomSerializer()
-        serializer.save(room=roomBookingDetails)
+        roomBookingDetails.save(update_fields=['status'])
+
         return JsonResponse("Room Booking Accepted", safe=False)
 
 
@@ -244,5 +253,14 @@ class RejectBookingRequestView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        bookingTableId = request.query_params.get('roomBookId')
 
-        return "class"
+        try:
+            roomBookingDetails = RentedRoom.objects.get(id=bookingTableId)
+        except RentedRoom.DoesNotExist:
+            return JsonResponse({"error": "Room booking not found"}, status=404)
+
+        roomBookingDetails.status = "REJECTED"
+        roomBookingDetails.save(update_fields=['status'])
+
+        return JsonResponse("Room Booking Rejected", safe=False)
