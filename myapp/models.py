@@ -89,7 +89,7 @@ class RentedRoom(models.Model):
     status = models.CharField(max_length=10, choices=StatusType.choices, default="Pending")
     rented_date = models.DateTimeField(auto_now_add=False, null=True, blank=True)
     released_date = models.DateField(null=True)
-    remarks = models.TextField()
+    remarks = models.TextField(null=True)
 
     def __str__(self):
         return f"Status for room {self.room_id} is {self.status}"
