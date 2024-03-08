@@ -12,6 +12,7 @@ urlpatterns = [
     path('rented-room/', RentedRoomCreate.as_view(), name='rented-room'),
     path('get-booking-request/',GetBookingRequestRoomAPIView.as_view(), name='get-booking-request'),
     path('accept-booking-request/', AcceptBookingRequestView.as_view(), name='accept-booking-request'),
-    path('reject-booking-request/', RejectBookingRequestView.as_view(), name='reject-booking-request')
+    path('reject-booking-request/', RejectBookingRequestView.as_view(), name='reject-booking-request'),
+    path('room-details/<uuid:room_id>/', RoomDetailsAPIView.as_view(), name='room-details'),
 ]
 

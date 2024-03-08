@@ -104,7 +104,7 @@ class RentedRoomCreate(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(tenant_id = self.request.user)
+        serializer.save(tenant_id=self.request.user)
 
 
 class SearchAPIView(APIView):
@@ -157,7 +157,7 @@ class SearchAPIView(APIView):
                                         'longitude': roomLocation.longitude,
                                         'locationName': roomLocation.name,
                                         'available': roomDetails.available,
-                                        'rent':roomDetails.rent
+                                        'rent': roomDetails.rent
                                         })
 
                 return JsonResponse(return_data, safe=False)
@@ -248,13 +248,12 @@ class GetBookingRequestRoomAPIView(APIView):
         return JsonResponse(returnData, safe=False)
 
 
-#Accept the Booking Request
+# Accept the Booking Request
 class AcceptBookingRequestView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         bookingTableId = request.query_params.get('roomBookId')
-
 
         try:
 
@@ -280,7 +279,7 @@ class AcceptBookingRequestView(APIView):
             binding_key='rabbitmq_binding_key'
         )
         json_data = {
-            "owner":{
+            "owner": {
                 "name": request.user.username,
                 "email": request.user.email,
                 "phone": request.user.phone,
@@ -288,12 +287,12 @@ class AcceptBookingRequestView(APIView):
             },
             "room": {
                 "location": locationDetails.name,
-                "rent":  str(roomDetails.rent),
+                "rent": str(roomDetails.rent),
                 "bathroomType": roomDetails.bathroom_type,
                 "kitchenSlab": "Yes" if roomDetails.kitchen_slab else "No"
             },
             "tenant": {
-                "name":  tenant_user.username,
+                "name": tenant_user.username,
                 "email": tenant_user.email,
                 "phone": tenant_user.phone,
                 "address": tenant_user.address
@@ -301,7 +300,6 @@ class AcceptBookingRequestView(APIView):
         }
         rabbit_producer.send_message(json_data, routing_key='rabbitmq_binding_key', exchange='rabbitmq_exchange')
         rabbit_producer.close_connection()
-
 
         return JsonResponse("Room Booking Accepted", safe=False)
 
@@ -321,6 +319,28 @@ class RejectBookingRequestView(APIView):
         roomBookingDetails.save(update_fields=['status'])
 
         return JsonResponse("Room Booking Rejected", safe=False)
+
+
+class RoomDetailsAPIView(APIView):
+    def get(self, request, room_id):
+        try:
+            room = Room.objects.get(id=room_id)
+            location = Location.objects.get(room_id=room_id)
+            print("Location", location)
+        except Room.DoesNotExist:
+            return Response({'error': 'Room not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Location.DoesNotExist:
+            return Response({'error': 'Location not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        room_serializer = RoomSerializer(room)
+        location_serializer = LocationSerializer(location)
+
+        response_data = {
+            'room_details': room_serializer.data,
+            'location_details': location_serializer.data
+        }
+
+        return Response(response_data)
 
 
 
