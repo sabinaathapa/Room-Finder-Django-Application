@@ -8,6 +8,8 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.http import JsonResponse
 from rest_framework.views import APIView
+from django.contrib.auth import logout
+
 
 
 class OwnerSignUpView(generics.CreateAPIView):
@@ -95,3 +97,11 @@ class GetUserdetailsView(APIView):
         }]
 
         return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
+
+
+class LogOutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        logout(request)
+        return JsonResponse("Log Out Successful.", status=status.HTTP_200_OK, safe=False)

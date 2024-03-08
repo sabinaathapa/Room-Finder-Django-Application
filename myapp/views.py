@@ -134,14 +134,35 @@ class SearchAPIView(APIView):
                 # Query the database for records with these UUIDs
                 return_data = []
                 for uuid_object in uuid_objects:
-                    location_with_room = Location.objects.filter(id=uuid_object).prefetch_related(
-                        'room__room_images').first()
-                    serialized_data = {
-                        'location': serialize('json', [location_with_room], use_natural_foreign_keys=True),
-                        'room': serialize('json', [location_with_room.room], use_natural_foreign_keys=True),
-                        'image': serialize('json', location_with_room.room.room_images.all())
-                    }
-                    return_data.append(serialized_data)
+                    # location_with_room = Location.objects.filter(id=uuid_object).prefetch_related(
+                    #     'room__room_images').first()
+                    # serialized_data = {
+                    #     'location': serialize('json', [location_with_room], use_natural_foreign_keys=True),
+                    #     'room': serialize('json', [location_with_room.room], use_natural_foreign_keys=True),
+                    #     'image': serialize('json', location_with_room.room.room_images.all())
+                    # }
+                    # return_data.append(serialized_data)
+
+                    # //Search for the locaiton
+                    roomLocation = Location.objects.filter(id=uuid_object).get()
+                    roomDetails = Room.objects.filter(id=roomLocation.room_id).get()
+                    # imageLink = RoomImage.objects.filter(room_id=roomDetails.id).get()
+
+                    return_data.append({'roomId': roomDetails.id,
+                                        'roomType': roomDetails.room_type,
+                                        'noOfRooms': roomDetails.no_of_room,
+                                        'bathroomType': roomDetails.bathroom_type,
+                                        'kitchenSlab': roomDetails.kitchen_slab,
+                                        'wifi': roomDetails.wifi,
+                                        'waterType': roomDetails.water_type,
+                                        # 'imageLink': str(imageLink.room_image),
+                                        'latitude': roomLocation.latitude,
+                                        'longitude': roomLocation.longitude,
+                                        'locationName': roomLocation.name,
+                                        'available': roomDetails.available,
+                                        'rent':roomDetails.rent
+                                        })
+
                 return JsonResponse(return_data, safe=False)
                 # return Response(return_data)
             else:
@@ -246,7 +267,6 @@ class AcceptBookingRequestView(APIView):
         roomBookingDetails.save(update_fields=['status'])
 
         return JsonResponse("Room Booking Accepted", safe=False)
-
 
 
 class RejectBookingRequestView(APIView):
