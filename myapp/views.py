@@ -5,8 +5,9 @@ from rest_framework import generics, permissions, response, status
 from django.shortcuts import get_object_or_404
 import requests
 from django.http import JsonResponse
-from rest_framework.generics import ListAPIView
-
+from django.db.models import Prefetch
+from .rabbitmq_utils import RabbitMQProducer
+from rest_framework.generics import ListCreateAPIView
 from .models import *
 from .serializers import *
 from rest_framework.views import APIView
@@ -251,20 +252,60 @@ class GetBookingRequestRoomAPIView(APIView):
         return JsonResponse(returnData, safe=False)
 
 
-# Accept the Booking Request
+#Accept the Booking Request
 class AcceptBookingRequestView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         bookingTableId = request.query_params.get('roomBookId')
 
+
         try:
+
             roomBookingDetails = RentedRoom.objects.get(id=bookingTableId)
+            roomDetails = Room.objects.filter(id=roomBookingDetails.room_id_id).get()
+            locationDetails = Location.objects.filter(room_id=roomDetails.id).get()
+
         except RentedRoom.DoesNotExist:
             return JsonResponse({"error": "Room booking not found"}, status=404)
 
         roomBookingDetails.status = "ACCEPTED"
         roomBookingDetails.save(update_fields=['status'])
+
+        roomDetails.available = "False"
+        roomDetails.save(update_fields=['available'])
+
+        tenant_user = roomBookingDetails.tenant_id
+        rabbit_producer = RabbitMQProducer(
+            rabbitmq_host='192.168.56.156',
+            rabbitmq_port=5672,
+            exchange_name='rabbitmq_exchange',
+            queue_name='booking_queue',
+            binding_key='rabbitmq_binding_key'
+        )
+        json_data = {
+            "owner":{
+                "name": request.user.username,
+                "email": request.user.email,
+                "phone": request.user.phone,
+                "address": request.user.address
+            },
+            "room": {
+                "location": locationDetails.name,
+                "rent":  str(roomDetails.rent),
+                "bathroomType": roomDetails.bathroom_type,
+                "kitchenSlab": "Yes" if roomDetails.kitchen_slab else "No"
+            },
+            "tenant": {
+                "name":  tenant_user.username,
+                "email": tenant_user.email,
+                "phone": tenant_user.phone,
+                "address": tenant_user.address
+            }
+        }
+        rabbit_producer.send_message(json_data, routing_key='rabbitmq_binding_key', exchange='rabbitmq_exchange')
+        rabbit_producer.close_connection()
+
 
         return JsonResponse("Room Booking Accepted", safe=False)
 
@@ -284,3 +325,6 @@ class RejectBookingRequestView(APIView):
         roomBookingDetails.save(update_fields=['status'])
 
         return JsonResponse("Room Booking Rejected", safe=False)
+
+
+
