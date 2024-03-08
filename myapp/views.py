@@ -98,18 +98,13 @@ class LocationCreateAPIView(generics.ListCreateAPIView):
         hitting_external_api(location.id)
 
 
-class RentedRoomCreate(generics.CreateAPIView):
+class RentedRoomCreate(generics.ListCreateAPIView):
     queryset = RentedRoom.objects.all()
     serializer_class = RentedRoomSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.validated_data['tenant_id'] = self.request.user
-        room_id = self.request.data.get('room_id')
-        room = Room.objects.get(id=room_id)
-        serializer.validated_data['owner_id'] = room.user
-        # serializer.validated_data['booking_date'] = timezone.now()
-        serializer.save()
+        serializer.save(tenant_id = self.request.user)
 
 
 class SearchAPIView(APIView):
@@ -151,6 +146,7 @@ class SearchAPIView(APIView):
 
                     return_data.append({'roomId': roomDetails.id,
                                         'roomType': roomDetails.room_type,
+                                        'roomOwner': roomDetails.user_id,
                                         'noOfRooms': roomDetails.no_of_room,
                                         'bathroomType': roomDetails.bathroom_type,
                                         'kitchenSlab': roomDetails.kitchen_slab,
