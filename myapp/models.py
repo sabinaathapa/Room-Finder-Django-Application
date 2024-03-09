@@ -17,7 +17,7 @@ class UserProfilePicture(models.Model):
 class DocumentUpload(models.Model):
     class DocumentType(models.TextChoices):
         CITIZENSHIP = "CITIZENSHIP", "Citizenship"
-        LISCENCE = "LISCENCE", "Liscence"
+        LISCENCE = "LICENCE", "Licence"
 
     id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, default='', related_name='documents')

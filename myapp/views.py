@@ -20,7 +20,18 @@ class UserProfilePictureView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        uploaded_images = self.request.FILES.getlist('uploaded_images')
+
+        # Check if the user already has a profile picture
+        try:
+            userProfile = UserProfilePicture.objects.get(user=self.request.user)
+            # If the user has a profile picture, update it
+            userProfile.profile_picture = uploaded_images
+            serializer.instance = userProfile
+            serializer.save()
+        except UserProfilePicture.DoesNotExist:
+            # If the user doesn't have a profile picture, create a new one
+            serializer.save(user=self.request.user)
 
 
 class DocumentUploadView(generics.CreateAPIView):
@@ -29,7 +40,17 @@ class DocumentUploadView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        uploaded_doc = self.request.FILES.getlist('uploaded_doc')
+
+        try:
+            userDocs = DocumentUpload.objects.get(user=self.request.user)
+            # If the user has a profile picture, update it
+            userDocs.profile_picture = uploaded_doc
+            serializer.instance = userDocs
+            serializer.save()
+        except UserProfilePicture.DoesNotExist:
+            serializer.save(user=self.request.user)
+
 
 
 class RoomAPIView(generics.ListCreateAPIView):
@@ -50,6 +71,7 @@ class RoomAPIView(generics.ListCreateAPIView):
         room_instance = room_serializer.instance
 
         uploaded_images = request.FILES.getlist('uploaded_images')
+        print('"Images:  ', uploaded_images)
         for image in uploaded_images:
             RoomImage.objects.create(user=self.request.user, room=room_instance, room_image=image)
 
@@ -64,6 +86,7 @@ class RoomImageAPIView(generics.ListCreateAPIView):
     # permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
+        print("Saving Room Image")
         room_id = self.request.data.get('room')
         serializer.save(user=self.request.user, room_id=room_id)
 
@@ -327,4 +350,22 @@ class RejectBookingRequestView(APIView):
         return JsonResponse("Room Booking Rejected", safe=False)
 
 
+# ********************* USER PROFILE &************************
+class GetUserdetailsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        userProfile = UserProfilePicture.objects.get(user=user)
+
+        returnData = {
+            "username": user.username,
+            "email": user.email,
+            "phone": user.phone,
+            "address": user.address,
+            "image": userProfile.profile_picture.url
+        }
+
+        return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
 
