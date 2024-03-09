@@ -52,6 +52,7 @@ class DocumentUploadView(generics.CreateAPIView):
             serializer.save(user=self.request.user)
 
 
+
 class RoomAPIView(generics.ListCreateAPIView):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
