@@ -385,3 +385,4 @@ class GetUserdetailsView(APIView):
 
         return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
 
+

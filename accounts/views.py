@@ -9,7 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.http import JsonResponse
 from rest_framework.views import APIView
 from django.contrib.auth import logout
-
+from django.contrib.auth.hashers import make_password
 
 
 class OwnerSignUpView(generics.CreateAPIView):
@@ -82,9 +82,29 @@ class Getuserroleview(generics.RetrieveAPIView):
         user_role = request.user.role.name if request.user.role else None
         return JsonResponse({'role': user_role})
 
+
 class LogOutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         logout(request)
         return JsonResponse("Log Out Successful.", status=status.HTTP_200_OK, safe=False)
+
+
+# --Update Password--
+class PasswordUpdateAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        username = request.data.get('username')
+        new_password = request.data.get('new_password')
+
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'error': 'User with this username does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response({'message': 'Password updated successfully.'}, status=status.HTTP_200_OK)
