@@ -52,7 +52,6 @@ class DocumentUploadView(generics.CreateAPIView):
             serializer.save(user=self.request.user)
 
 
-
 class RoomAPIView(generics.ListCreateAPIView):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
@@ -62,18 +61,16 @@ class RoomAPIView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+        # Get the created room instance
+        room_instance = serializer.instance
+
+        uploaded_images = self.request.FILES.getlist('uploaded_images')
+        print('"Images:  ', uploaded_images)
+
     def create(self, request, *args, **kwargs):
         room_serializer = self.get_serializer(data=request.data)
         room_serializer.is_valid(raise_exception=True)
         self.perform_create(room_serializer)
-
-        # Get the created room instance
-        room_instance = room_serializer.instance
-
-        uploaded_images = request.FILES.getlist('uploaded_images')
-        print('"Images:  ', uploaded_images)
-        for image in uploaded_images:
-            RoomImage.objects.create(user=self.request.user, room=room_instance, room_image=image)
 
         headers = self.get_success_headers(room_serializer.data)
         return response.Response(room_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -152,7 +149,7 @@ class SearchAPIView(APIView):
 
                 # Query the database for records with these UUIDs
                 return_data = []
-                for uuid_object in uuid_objects:
+                for each in data:
                     # location_with_room = Location.objects.filter(id=uuid_object).prefetch_related(
                     #     'room__room_images').first()
                     # serialized_data = {
@@ -162,10 +159,12 @@ class SearchAPIView(APIView):
                     # }
                     # return_data.append(serialized_data)
 
+                    uuid_object = each['uuid']
                     # //Search for the locaiton
                     roomLocation = Location.objects.filter(id=uuid_object).get()
                     roomDetails = Room.objects.filter(id=roomLocation.room_id).get()
-                    # imageLink = RoomImage.objects.filter(room_id=roomDetails.id).get()
+                    imageLink = RoomImage.objects.filter(room_id=roomDetails.id).get()
+                    owner = User.objects.filter(id=roomDetails.user_id).get()
 
                     return_data.append({'roomId': roomDetails.id,
                                         'roomType': roomDetails.room_type,
@@ -175,12 +174,14 @@ class SearchAPIView(APIView):
                                         'kitchenSlab': roomDetails.kitchen_slab,
                                         'wifi': roomDetails.wifi,
                                         'waterType': roomDetails.water_type,
-                                        # 'imageLink': str(imageLink.room_image),
+                                        'imageLink': str(imageLink.room_image),
                                         'latitude': roomLocation.latitude,
                                         'longitude': roomLocation.longitude,
                                         'locationName': roomLocation.name,
                                         'available': roomDetails.available,
-                                        'rent': roomDetails.rent
+                                        'rent': roomDetails.rent,
+                                        'distance' : each['distance'],
+                                        'ownerName': owner.first_name +" " + owner.last_name
                                         })
 
                 return JsonResponse(return_data, safe=False)
@@ -384,4 +385,3 @@ class GetUserdetailsView(APIView):
         }
 
         return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
-
