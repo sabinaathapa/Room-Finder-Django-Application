@@ -166,23 +166,24 @@ class SearchAPIView(APIView):
                     imageLink = RoomImage.objects.filter(room_id=roomDetails.id).get()
                     owner = User.objects.filter(id=roomDetails.user_id).get()
 
-                    return_data.append({'roomId': roomDetails.id,
-                                        'roomType': roomDetails.room_type,
-                                        'roomOwner': roomDetails.user_id,
-                                        'noOfRooms': roomDetails.no_of_room,
-                                        'bathroomType': roomDetails.bathroom_type,
-                                        'kitchenSlab': roomDetails.kitchen_slab,
-                                        'wifi': roomDetails.wifi,
-                                        'waterType': roomDetails.water_type,
-                                        'imageLink': str(imageLink.room_image),
-                                        'latitude': roomLocation.latitude,
-                                        'longitude': roomLocation.longitude,
-                                        'locationName': roomLocation.name,
-                                        'available': roomDetails.available,
-                                        'rent': roomDetails.rent,
-                                        'distance' : each['distance'],
-                                        'ownerName': owner.first_name +" " + owner.last_name
-                                        })
+                    if roomDetails.available:
+                        return_data.append({'roomId': roomDetails.id,
+                                            'roomType': roomDetails.room_type,
+                                            'roomOwner': roomDetails.user_id,
+                                            'noOfRooms': roomDetails.no_of_room,
+                                            'bathroomType': roomDetails.bathroom_type,
+                                            'kitchenSlab': roomDetails.kitchen_slab,
+                                            'wifi': roomDetails.wifi,
+                                            'waterType': roomDetails.water_type,
+                                            'imageLink': str(imageLink.room_image),
+                                            'latitude': roomLocation.latitude,
+                                            'longitude': roomLocation.longitude,
+                                            'locationName': roomLocation.name,
+                                            'available': roomDetails.available,
+                                            'rent': roomDetails.rent,
+                                            'distance': each['distance'],
+                                            'ownerName': owner.first_name + " " + owner.last_name
+                                            })
 
                 return JsonResponse(return_data, safe=False)
                 # return Response(return_data)
@@ -346,22 +347,36 @@ class RejectBookingRequestView(APIView):
 
 
 class RoomDetailsAPIView(APIView):
-    def get(self, request, room_id):
+    def get(self, request):
         try:
-            room = Room.objects.get(id=room_id)
-            location = Location.objects.get(room_id=room_id)
+            roomId = request.query_params.get('roomId')
+            roomDetails = Room.objects.get(id=roomId)
+            location = Location.objects.get(room_id=roomId)
+            images = RoomImage.objects.get(room_id=roomId)
             print("Location", location)
         except Room.DoesNotExist:
             return Response({'error': 'Room not found'}, status=status.HTTP_404_NOT_FOUND)
         except Location.DoesNotExist:
             return Response({'error': 'Location not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        room_serializer = RoomSerializer(room)
+        room_serializer = RoomSerializer(roomDetails)
         location_serializer = LocationSerializer(location)
 
         response_data = {
-            'room_details': room_serializer.data,
-            'location_details': location_serializer.data
+            'roomId': roomDetails.id,
+                 'roomType': roomDetails.room_type,
+                 'noOfRooms': roomDetails.no_of_room,
+                 'bathroomType': roomDetails.bathroom_type,
+                 'kitchenSlab': roomDetails.kitchen_slab,
+                 'wifi': roomDetails.wifi,
+                 'waterType': roomDetails.water_type,
+                 'imageLink': "http://localhost:8000/media/" + str(images.room_image),
+                 'latitude': location.latitude,
+                 'longitude': location.longitude,
+                 'locationName': location.name,
+                 'rent':roomDetails.rent,
+                'ownerId': roomDetails.user_id
+
         }
 
         return Response(response_data)
@@ -385,3 +400,46 @@ class GetUserdetailsView(APIView):
         }
 
         return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
+
+class GetUserRequestedRoom(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        userRentedRoomRequest = RentedRoom.objects.filter(tenant_id_id=user.id)
+
+        returnData = []
+
+        for each in userRentedRoomRequest:
+            roomDetails = Room.objects.get(id=each.room_id_id)
+            locationDetails = Location.objects.get(room_id=each.room_id_id)
+
+            returnData.append({
+                'roomId':roomDetails.id,
+                'bookingTableId':each.id,
+                'locationName': locationDetails.name,
+                'coordinate': str(locationDetails.latitude) + ", " + str(locationDetails.longitude),
+                'roomType': roomDetails.room_type,
+                'noOfRooms': roomDetails.no_of_room,
+                'bathroomType':roomDetails.bathroom_type,
+                'kitchenType':roomDetails.kitchen_slab,
+                'wifi':roomDetails.wifi,
+                'water':roomDetails.water_type,
+                'rent':roomDetails.rent,
+                'status':each.status
+            })
+
+        return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
+
+
+class CancelBookingRequest(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        bookingTableId = request.query_params.get('id')
+        bookingTable = RentedRoom.objects.get(id=bookingTableId)
+
+        bookingTable.status = "CANCELLED"
+        bookingTable.save(update_fields=['status'])
+
+        return JsonResponse("Cancelled Booking Request", status=status.HTTP_200_OK, safe=False)

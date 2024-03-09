@@ -14,6 +14,8 @@ urlpatterns = [
     path('accept-booking-request/', AcceptBookingRequestView.as_view(), name='accept-booking-request'),
     path('reject-booking-request/', RejectBookingRequestView.as_view(), name='reject-booking-request'),
     path('get-user-details/', GetUserdetailsView.as_view(), name='user-details'),
-    path('room-details/<uuid:room_id>/', RoomDetailsAPIView.as_view(), name='room-details'),
+    path('room-details/', RoomDetailsAPIView.as_view(), name='room-details'),
+    path('get-user-requested-room/', GetUserRequestedRoom.as_view(), name='get-user-requested-room'),
+    path('cancel-booking-request/',CancelBookingRequest.as_view(), name='cancel-booking-request' ),
 ]
 
