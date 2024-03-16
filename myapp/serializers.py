@@ -34,7 +34,7 @@ class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = ['id', 'user', 'owner_name', 'room_type', 'no_of_room', 'bathroom_type', 'kitchen_slab',
-                  'created_date', 'rent', 'available', 'wifi', 'water_type', 'room_images']
+                  'created_date', 'rent', 'available', 'wifi', 'water_type', 'description', 'room_images']
 
     def create(self, validated_data):
         uploaded_images = self.context.get('view').request.FILES.getlist('uploaded_images')
@@ -43,6 +43,7 @@ class RoomSerializer(serializers.ModelSerializer):
         for image in uploaded_images:
             RoomImage.objects.create(user=user, room=room, room_image=image)
         return room
+
 
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:

@@ -255,6 +255,8 @@ class GetBookingRequestRoomAPIView(APIView):
                  'bookingTableId': room.id,
                  'roomType': roomDetails.room_type,
                  'noOfRooms': roomDetails.no_of_room,
+                 'remarks': room.remarks,
+                 'expectedDate': room.rented_date,
                  'bathroomType': roomDetails.bathroom_type,
                  'kitchenSlab': roomDetails.kitchen_slab,
                  'wifi': roomDetails.wifi,
