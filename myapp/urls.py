@@ -20,5 +20,6 @@ urlpatterns = [
     path('get-available-room-location/',GetAvailableRoomLocation.as_view(), name='get-available-room-location'),
     path('get-profile-picture/', GetUserProfilePictureView.as_view(), name='get-profile-picture'),
     path('get-document-picture/', GetDocumentPictureView.as_view(), name='get-document-picture'),
+
 ]
 
