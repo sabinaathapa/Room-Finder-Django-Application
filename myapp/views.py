@@ -12,8 +12,7 @@ from .models import *
 from .serializers import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .predict import make_prediction
-# import pandas as pd
+
 
 
 class UserProfilePictureView(generics.CreateAPIView):
@@ -178,6 +177,7 @@ class SearchAPIView(APIView):
                                             'kitchenSlab': roomDetails.kitchen_slab,
                                             'wifi': roomDetails.wifi,
                                             'waterType': roomDetails.water_type,
+                                            'description': roomDetails.description,
                                             'imageLink': str(imageLink.room_image),
                                             'latitude': roomLocation.latitude,
                                             'longitude': roomLocation.longitude,
@@ -223,6 +223,7 @@ class GetOwnerCreatedRoomAPIView(APIView):
                  'noOfRooms': room.no_of_room, 'user_id': room.user_id,
                  'bathroomType': room.bathroom_type, 'kitchenSlab': room.kitchen_slab,
                  'wifi': room.wifi, 'waterType': room.water_type,
+                 'description': room.description, 'description': room.description,
                  'imageLink': str(image_link.room_image),
                  'coordinates': str(roomLocation.latitude) + ", " + str(roomLocation.longitude),
                  'locationName': roomLocation.name
@@ -380,6 +381,7 @@ class RoomDetailsAPIView(APIView):
                  'longitude': location.longitude,
                  'locationName': location.name,
                  'rent':roomDetails.rent,
+                 'description': roomDetails.description,
                 'ownerId': roomDetails.user_id
 
         }
