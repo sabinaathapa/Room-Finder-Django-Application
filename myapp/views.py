@@ -12,8 +12,6 @@ from .models import *
 from .serializers import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .predict import make_prediction
-# import pandas as pd
 
 
 class UserProfilePictureView(generics.CreateAPIView):
@@ -449,3 +447,19 @@ class CancelBookingRequest(APIView):
         bookingTable.save(update_fields=['status'])
 
         return JsonResponse("Cancelled Booking Request", status=status.HTTP_200_OK, safe=False)
+
+
+class GetAvailableRoomLocation(APIView):
+    def get(self, request):
+        availableRooms = Room.objects.filter(available=True)
+
+        returnData = []
+
+        for each in availableRooms:
+            location = Location.objects.get(room_id=each.id)
+            returnData.append({
+                "latitude": location.latitude,
+                "longitude": location.longitude
+            })
+
+        return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)

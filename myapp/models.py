@@ -51,7 +51,7 @@ class Room(models.Model):
     available = models.BooleanField(default=True)
     wifi = models.BooleanField(default=False)
     water_type = models.CharField(max_length=100, choices=WaterType.choices)
-    description = models.TextField()
+    description = models.TextField(default="")
 
 
 
