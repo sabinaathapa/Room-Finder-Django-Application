@@ -40,15 +40,17 @@ class DocumentUploadView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        uploaded_doc = self.request.FILES.getlist('uploaded_doc')
+        uploaded_docs = self.request.FILES.getlist('uploaded_doc')
 
         try:
-            userDocs = DocumentUpload.objects.get(user=self.request.user)
-            # If the user has a profile picture, update it
-            userDocs.profile_picture = uploaded_doc
-            serializer.instance = userDocs
+            # Try to get the DocumentUpload object for the current user
+            user_docs = DocumentUpload.objects.get(user=self.request.user)
+            # If the user has existing DocumentUpload object, update it
+            user_docs.uploaded_doc.add(*uploaded_docs)
+            serializer.instance = user_docs
             serializer.save()
-        except UserProfilePicture.DoesNotExist:
+        except DocumentUpload.DoesNotExist:
+            # If the DocumentUpload object does not exist for the user, create a new one
             serializer.save(user=self.request.user)
 
 
@@ -392,17 +394,51 @@ class GetUserdetailsView(APIView):
     def get(self, request):
         user = request.user
 
-        userProfile = UserProfilePicture.objects.get(user=user)
+        # userProfile = UserProfilePicture.objects.get(user=user)
+        # userDocument = DocumentUpload.objects.get(user=user)
 
         returnData = {
             "username": user.username,
             "email": user.email,
             "phone": user.phone,
             "address": user.address,
-            "image": userProfile.profile_picture.url
+            # "image": userProfile.profile_picture.url,
+            # "documentType":userDocument.document_type,
+            # "documentImage": userDocument.document_image.url
         }
 
         return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
+
+# Get users profile picture
+class GetUserProfilePictureView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        userProfile = UserProfilePicture.objects.get(user=user)
+
+        returnData = {
+            "image": userProfile.profile_picture.url,
+        }
+        return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
+
+
+# Get Document picture
+class GetDocumentPictureView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        userDocument = DocumentUpload.objects.get(user=user)
+
+        returnData = {
+            "documentType":userDocument.document_type,
+            "documentImage": userDocument.document_image.url
+        }
+        return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
+
 
 class GetUserRequestedRoom(APIView):
     permission_classes = [permissions.IsAuthenticated]

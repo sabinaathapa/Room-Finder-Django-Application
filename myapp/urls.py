@@ -18,5 +18,7 @@ urlpatterns = [
     path('get-user-requested-room/', GetUserRequestedRoom.as_view(), name='get-user-requested-room'),
     path('cancel-booking-request/',CancelBookingRequest.as_view(), name='cancel-booking-request' ),
     path('get-available-room-location/',GetAvailableRoomLocation.as_view(), name='get-available-room-location'),
+    path('get-profile-picture/', GetUserProfilePictureView.as_view(), name='get-profile-picture'),
+    path('get-document-picture/', GetDocumentPictureView.as_view(), name='get-document-picture'),
 ]
 
