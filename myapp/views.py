@@ -12,6 +12,8 @@ from .models import *
 from .serializers import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from .predict import make_prediction
+# import pandas as pd
 
 
 class UserProfilePictureView(generics.CreateAPIView):
@@ -429,7 +431,8 @@ class GetUserRequestedRoom(APIView):
                 'wifi':roomDetails.wifi,
                 'water':roomDetails.water_type,
                 'rent':roomDetails.rent,
-                'status':each.status
+                'status':each.status,
+                'offeredRent':each.offered_rent
             })
 
         return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)

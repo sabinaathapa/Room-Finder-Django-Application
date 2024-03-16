@@ -92,6 +92,7 @@ class RentedRoom(models.Model):
     rented_date = models.DateTimeField(auto_now_add=False, null=True, blank=True)
     released_date = models.DateField(null=True)
     remarks = models.TextField(null=True)
+    offered_rent = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
     def __str__(self):
         return f"Status for room {self.room_id} is {self.status}"
