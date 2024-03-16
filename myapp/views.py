@@ -9,7 +9,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 
-
 class UserProfilePictureView(generics.CreateAPIView):
     queryset = UserProfilePicture.objects.all()
     serializer_class = UserProfilePictureseriliazer
@@ -48,7 +47,6 @@ class DocumentUploadView(generics.CreateAPIView):
         except DocumentUpload.DoesNotExist:
             # If the DocumentUpload object does not exist for the user, create a new one
             serializer.save(user=self.request.user)
-
 
 
 class RoomAPIView(generics.ListCreateAPIView):
@@ -367,19 +365,19 @@ class RoomDetailsAPIView(APIView):
 
         response_data = {
             'roomId': roomDetails.id,
-                 'roomType': roomDetails.room_type,
-                 'noOfRooms': roomDetails.no_of_room,
-                 'bathroomType': roomDetails.bathroom_type,
-                 'kitchenSlab': roomDetails.kitchen_slab,
-                 'wifi': roomDetails.wifi,
-                 'waterType': roomDetails.water_type,
-                 'imageLink': "http://localhost:8000/media/" + str(images.room_image),
-                 'latitude': location.latitude,
-                 'longitude': location.longitude,
-                 'locationName': location.name,
-                 'rent':roomDetails.rent,
-                 'description': roomDetails.description,
-                'ownerId': roomDetails.user_id
+            'roomType': roomDetails.room_type,
+            'noOfRooms': roomDetails.no_of_room,
+            'bathroomType': roomDetails.bathroom_type,
+            'kitchenSlab': roomDetails.kitchen_slab,
+            'wifi': roomDetails.wifi,
+            'waterType': roomDetails.water_type,
+            'imageLink': "http://localhost:8000/media/" + str(images.room_image),
+            'latitude': location.latitude,
+            'longitude': location.longitude,
+            'locationName': location.name,
+            'rent': roomDetails.rent,
+            'description': roomDetails.description,
+            'ownerId': roomDetails.user_id
 
         }
 
@@ -408,6 +406,7 @@ class GetUserdetailsView(APIView):
 
         return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
 
+
 # Get users profile picture
 class GetUserProfilePictureView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -415,12 +414,18 @@ class GetUserProfilePictureView(APIView):
     def get(self, request):
         user = request.user
 
-        userProfile = UserProfilePicture.objects.get(user=user)
+        try:
+            userProfile = UserProfilePicture.objects.get(user=user)
 
-        returnData = {
-            "image": userProfile.profile_picture.url,
-        }
-        return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
+            returnData = {
+                "image": userProfile.profile_picture.url,
+            }
+            return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
+        except:
+            returnData = {
+                "image": None,
+            }
+            return JsonResponse(None,  status=status.HTTP_200_OK, safe=False)
 
 
 # Get Document picture
@@ -430,13 +435,20 @@ class GetDocumentPictureView(APIView):
     def get(self, request):
         user = request.user
 
-        userDocument = DocumentUpload.objects.get(user=user)
+        try:
+            userDocument = DocumentUpload.objects.get(user=user)
 
-        returnData = {
-            "documentType":userDocument.document_type,
-            "documentImage": userDocument.document_image.url
-        }
-        return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
+            returnData = {
+                "documentType": userDocument.document_type,
+                "documentImage": userDocument.document_image.url
+            }
+            return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
+        except:
+            # returnData = {
+            #     "documentType": None,
+            #     "documentImage": None
+            # }
+            return JsonResponse( None, status=status.HTTP_200_OK, safe=False)
 
 
 class GetUserRequestedRoom(APIView):
@@ -453,19 +465,19 @@ class GetUserRequestedRoom(APIView):
             locationDetails = Location.objects.get(room_id=each.room_id_id)
 
             returnData.append({
-                'roomId':roomDetails.id,
-                'bookingTableId':each.id,
+                'roomId': roomDetails.id,
+                'bookingTableId': each.id,
                 'locationName': locationDetails.name,
                 'coordinate': str(locationDetails.latitude) + ", " + str(locationDetails.longitude),
                 'roomType': roomDetails.room_type,
                 'noOfRooms': roomDetails.no_of_room,
-                'bathroomType':roomDetails.bathroom_type,
-                'kitchenType':roomDetails.kitchen_slab,
-                'wifi':roomDetails.wifi,
-                'water':roomDetails.water_type,
-                'rent':roomDetails.rent,
-                'status':each.status,
-                'offeredRent':each.offered_rent
+                'bathroomType': roomDetails.bathroom_type,
+                'kitchenType': roomDetails.kitchen_slab,
+                'wifi': roomDetails.wifi,
+                'water': roomDetails.water_type,
+                'rent': roomDetails.rent,
+                'status': each.status,
+                'offeredRent': each.offered_rent
             })
 
         return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
