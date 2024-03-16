@@ -1,17 +1,13 @@
-from datetime import timezone
 from uuid import UUID
-from django.core.serializers import serialize
 from rest_framework import generics, permissions, response, status
 from django.shortcuts import get_object_or_404
 import requests
 from django.http import JsonResponse
-from django.db.models import Prefetch
 from .rabbitmq_utils import RabbitMQProducer
-from rest_framework.generics import ListCreateAPIView
-from .models import *
 from .serializers import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
+
 
 
 class UserProfilePictureView(generics.CreateAPIView):
@@ -178,6 +174,7 @@ class SearchAPIView(APIView):
                                             'kitchenSlab': roomDetails.kitchen_slab,
                                             'wifi': roomDetails.wifi,
                                             'waterType': roomDetails.water_type,
+                                            'description': roomDetails.description,
                                             'imageLink': str(imageLink.room_image),
                                             'latitude': roomLocation.latitude,
                                             'longitude': roomLocation.longitude,
@@ -223,6 +220,7 @@ class GetOwnerCreatedRoomAPIView(APIView):
                  'noOfRooms': room.no_of_room, 'user_id': room.user_id,
                  'bathroomType': room.bathroom_type, 'kitchenSlab': room.kitchen_slab,
                  'wifi': room.wifi, 'waterType': room.water_type,
+                 'description': room.description, 'description': room.description,
                  'imageLink': str(image_link.room_image),
                  'coordinates': str(roomLocation.latitude) + ", " + str(roomLocation.longitude),
                  'locationName': roomLocation.name
@@ -380,6 +378,7 @@ class RoomDetailsAPIView(APIView):
                  'longitude': location.longitude,
                  'locationName': location.name,
                  'rent':roomDetails.rent,
+                 'description': roomDetails.description,
                 'ownerId': roomDetails.user_id
 
         }
