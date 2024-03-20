@@ -537,7 +537,9 @@ class GetDocumentWithUser(APIView):
                 "documentImage":each.document_image.url,
                 "userName":userDetails.first_name + " " + userDetails.last_name,
                 "userEmail":userDetails.email,
-                "userPhone":userDetails.phone
+                "userPhone":userDetails.phone,
+                "userAddress":userDetails.address,
+                "status":each.verification_status
             })
         return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
 
@@ -568,16 +570,20 @@ class GetAllUserDetails(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        type = request.query_params.get('type')
+
         #Get all users with role id 1 i.e. Tenant
-        allTenant = User.objects.filter(role_id=1)
-        allOwner = User.objects.filter(role_id=2)
+        allUsers = None
+        if type =='tenant':
+            allUsers = User.objects.filter(role_id=1)
+        elif type =='owner':
+            allUsers = User.objects.filter(role_id=2)
 
-        tenant = []
-        owner = []
+        returnData = []
 
-        for each in allTenant:
+        for each in allUsers:
             print("Loop")
-            tenant.append({
+            returnData.append({
                 "userId":each.id,
                 "userName":each.first_name + " " + each.last_name,
                 "userEmail":each.email,
@@ -585,21 +591,19 @@ class GetAllUserDetails(APIView):
                 "userAddress" : each.address
             })
 
-        for each in allOwner:
-            print("Loop")
-            owner.append({
-                "userId": each.id,
-                "userName": each.first_name + " " + each.last_name,
-                "userEmail": each.email,
-                "userPhone": each.phone,
-                "userAddress": each.address,
-                "verification" : each.verification
-            })
+        # for each in allOwner:
+        #     print("Loop")
+        #     owner.append({
+        #         "userId": each.id,
+        #         "userName": each.first_name + " " + each.last_name,
+        #         "userEmail": each.email,
+        #         "userPhone": each.phone,
+        #         "userAddress": each.address,
+        #         "userAddress": each.address,
+        #         "verification" : each.verification
+        #     })
 
-        return JsonResponse({
-            "owner":owner,
-            "tenant":tenant
-        }, status=status.HTTP_200_OK, safe=False)
+        return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
 
 
 #Get the total, available, rented rooms count

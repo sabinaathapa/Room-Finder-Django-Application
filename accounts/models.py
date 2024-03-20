@@ -5,6 +5,7 @@ import uuid
 class Role(models.Model):
     OWNER = 'Owner'
     TENANT = 'Tenant'
+    ADMIN = 'Admin'
     name = models.CharField(max_length=100)
     
     def is_owner(self, user):
@@ -12,6 +13,9 @@ class Role(models.Model):
     
     def is_tenant(self, user):
         return user.role == self.TENANT
+
+    def is_admin(self, user):
+        return user.role == self.ADMIN
     
     
 class User(AbstractUser):
