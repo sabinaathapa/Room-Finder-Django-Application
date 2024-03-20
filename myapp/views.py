@@ -399,6 +399,7 @@ class GetUserdetailsView(APIView):
             "email": user.email,
             "phone": user.phone,
             "address": user.address,
+            "verification":user.verification
             # "image": userProfile.profile_picture.url,
             # "documentType":userDocument.document_type,
             # "documentImage": userDocument.document_image.url
@@ -440,7 +441,8 @@ class GetDocumentPictureView(APIView):
 
             returnData = {
                 "documentType": userDocument.document_type,
-                "documentImage": userDocument.document_image.url
+                "documentImage": userDocument.document_image.url,
+                "verificationStatus":userDocument.verification_status
             }
             return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
         except:
@@ -510,3 +512,124 @@ class GetAvailableRoomLocation(APIView):
             })
 
         return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
+
+
+
+##################### ADMIN VIEW ##########################
+#Get the users details with their documents to view in admin page
+class GetDocumentWithUser(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        documentStatus = request.query_params.get('status')
+
+        retrievedDocuments = DocumentUpload.objects.filter(verification_status=documentStatus)
+
+        returnData = []
+
+        for each in retrievedDocuments:
+            userDetails = User.objects.get(id=each.user_id)
+
+            returnData.append({
+                "userId":userDetails.id,
+                "documentId":each.id,
+                "documentType":each.document_type,
+                "documentImage":each.document_image.url,
+                "userName":userDetails.first_name + " " + userDetails.last_name,
+                "userEmail":userDetails.email,
+                "userPhone":userDetails.phone
+            })
+        return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
+
+#The admin can view and accept/reject the document.
+class PerformActionOnDocument(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        documentId = request.query_params.get('id')
+        newStatus = request.query_params.get('status')
+
+
+        #Update the document status
+        document = DocumentUpload.objects.get(id=documentId)
+        document.verification_status = newStatus
+        document.save(update_fields=['verification_status'])
+
+        #update the user
+        user = User.objects.get(id=document.user_id)
+        user.verification = True
+        user.save(update_fields=['verification'])
+
+        return JsonResponse("Document has been updated with status " + newStatus, status=status.HTTP_200_OK, safe=False)
+
+
+#Get's All the user's details
+class GetAllUserDetails(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        #Get all users with role id 1 i.e. Tenant
+        allTenant = User.objects.filter(role_id=1)
+        allOwner = User.objects.filter(role_id=2)
+
+        tenant = []
+        owner = []
+
+        for each in allTenant:
+            print("Loop")
+            tenant.append({
+                "userId":each.id,
+                "userName":each.first_name + " " + each.last_name,
+                "userEmail":each.email,
+                "userPhone":each.phone,
+                "userAddress" : each.address
+            })
+
+        for each in allOwner:
+            print("Loop")
+            owner.append({
+                "userId": each.id,
+                "userName": each.first_name + " " + each.last_name,
+                "userEmail": each.email,
+                "userPhone": each.phone,
+                "userAddress": each.address,
+                "verification" : each.verification
+            })
+
+        return JsonResponse({
+            "owner":owner,
+            "tenant":tenant
+        }, status=status.HTTP_200_OK, safe=False)
+
+
+#Get the total, available, rented rooms count
+class GetRoomCount(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    #TODO: IMplement this
+    def get(self, request):
+        totalBookingRequest = len(RentedRoom.objects.all())
+        acceptedRoomCount = len(RentedRoom.objects.filter(status="ACCEPTED"))
+        rejectedRoomCount = len(RentedRoom.objects.filter(status="REJECTED"))
+        cancelledRoomCount = len(RentedRoom.objects.filter(status="CANCELLED"))
+        pendingRoomCount = len(RentedRoom.objects.filter(status="PENDING"))
+        totalRoomCount = len(Room.objects.all())
+        availableRoomCount = len(Room.objects.filter(available=True))
+        rentedRoomCount = len(Room.objects.filter(available=False))
+
+
+        return JsonResponse({
+            "totalBookingRequest": totalBookingRequest,
+            "acceptedBookingCount":acceptedRoomCount,
+            "rejectedBookingCount":rejectedRoomCount,
+            "cancelledBookingCount":cancelledRoomCount,
+            "pendingBookingCount":pendingRoomCount,
+            "totalRoomCount":totalRoomCount ,
+            "availableRoomCount":availableRoomCount,
+            "rentedRoomCount":rentedRoomCount
+        }, status=status.HTTP_200_OK, safe=False)
+
+
+
+
+################## ADMIN VIEW END #########################

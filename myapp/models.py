@@ -19,10 +19,17 @@ class DocumentUpload(models.Model):
         CITIZENSHIP = "CITIZENSHIP", "Citizenship"
         LISCENCE = "LICENCE", "Licence"
 
+    class VerificationStatus(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        APPROVED = "APPROVED", "Approved"
+        Rejected = "REJECTED", "Rejected"
+
     id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, default='', related_name='documents')
     document_type = models.CharField(max_length=200, choices=DocumentType.choices)
     document_image = models.ImageField(upload_to='document_pics')
+    verification_status = models.CharField(max_length= 20, choices=VerificationStatus.choices,default="PENDING")
+    remarks = models.TextField(blank=True, default=" ")
 
 
 class Room(models.Model):
@@ -96,5 +103,4 @@ class RentedRoom(models.Model):
 
     def __str__(self):
         return f"Status for room {self.room_id} is {self.status}"
-
 
