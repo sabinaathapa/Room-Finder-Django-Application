@@ -35,7 +35,8 @@ class DocumentUploadView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        uploaded_docs = self.request.FILES.getlist('uploaded_doc')
+        document_type = self.request.data.get('document_type')
+        document_image = self.request.FILES.get('document_image')
 
         rabbit_producer = RabbitMQProducer(
             rabbitmq_host='192.168.219.10',
@@ -46,25 +47,17 @@ class DocumentUploadView(generics.CreateAPIView):
         )
 
         try:
-            # Try to get the DocumentUpload object for the current user
-            user_docs = DocumentUpload.objects.get(user=self.request.user)
-            # If the user has existing DocumentUpload object, update it
-            user_docs.uploaded_doc.add(*uploaded_docs)
-            serializer.instance = user_docs
-            serializer.save()
-
-            json_data ={
-                'username': self.request.user.first_name + ' ' + self.request.user.last_name,
-                'email': 'beeplaw21@gmail.com'
-            }
-
-            rabbit_producer.send_message(json_data, routing_key='document_alert_key', exchange='rabbitmq_exchange')
-            rabbit_producer.close_connection()
-
-
-        except DocumentUpload.DoesNotExist:
-            # If the DocumentUpload object does not exist for the user, create a new one
-            serializer.save(user=self.request.user)
+            # Try to get the DocumentUpload object for the current user and document_type
+            user_docs = DocumentUpload.objects.filter(user=self.request.user, document_type=document_type).first()
+            # If the user has an existing DocumentUpload object, update it
+            if user_docs:
+                user_docs.document_image = document_image
+                user_docs.verification_status = DocumentUpload.VerificationStatus.PENDING
+                user_docs.save()
+                serializer.instance = user_docs
+            else:
+                # If the DocumentUpload object does not exist for the user, create a new one
+                serializer.save(user=self.request.user, document_type=document_type, document_image=document_image)
 
             json_data = {
                 'username': self.request.user.first_name + ' ' + self.request.user.last_name,
@@ -73,6 +66,11 @@ class DocumentUploadView(generics.CreateAPIView):
 
             rabbit_producer.send_message(json_data, routing_key='document_alert_key', exchange='rabbitmq_exchange')
             rabbit_producer.close_connection()
+
+        except Exception as e:
+            # Handle any other exceptions that may occur
+            print(f"Error: {e}")
+            raise
 
 class RoomAPIView(generics.ListCreateAPIView):
     queryset = Room.objects.all()
@@ -603,9 +601,10 @@ class PerformActionOnDocument(APIView):
         document.save(update_fields=['verification_status'])
 
         #update the user
-        user = User.objects.get(id=document.user_id)
-        user.verification = True
-        user.save(update_fields=['verification'])
+        if(newStatus == "APPROVED"):
+            user = User.objects.get(id=document.user_id)
+            user.verification = True
+            user.save(update_fields=['verification'])
 
         return JsonResponse("Document has been updated with status " + newStatus, status=status.HTTP_200_OK, safe=False)
 
