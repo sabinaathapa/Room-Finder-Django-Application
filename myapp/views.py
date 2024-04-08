@@ -37,6 +37,14 @@ class DocumentUploadView(generics.CreateAPIView):
     def perform_create(self, serializer):
         uploaded_docs = self.request.FILES.getlist('uploaded_doc')
 
+        rabbit_producer = RabbitMQProducer(
+            rabbitmq_host='192.168.219.10',
+            rabbitmq_port=5672,
+            exchange_name='rabbitmq_exchange',
+            queue_name='document_alert',
+            binding_key='document_alert_key'
+        )
+
         try:
             # Try to get the DocumentUpload object for the current user
             user_docs = DocumentUpload.objects.get(user=self.request.user)
@@ -44,10 +52,27 @@ class DocumentUploadView(generics.CreateAPIView):
             user_docs.uploaded_doc.add(*uploaded_docs)
             serializer.instance = user_docs
             serializer.save()
+
+            json_data ={
+                'username': self.request.user.first_name + ' ' + self.request.user.last_name,
+                'email': 'beeplaw21@gmail.com'
+            }
+
+            rabbit_producer.send_message(json_data, routing_key='document_alert_key', exchange='rabbitmq_exchange')
+            rabbit_producer.close_connection()
+
+
         except DocumentUpload.DoesNotExist:
             # If the DocumentUpload object does not exist for the user, create a new one
             serializer.save(user=self.request.user)
 
+            json_data = {
+                'username': self.request.user.first_name + ' ' + self.request.user.last_name,
+                'email': 'beeplaw21@gmail.com'
+            }
+
+            rabbit_producer.send_message(json_data, routing_key='document_alert_key', exchange='rabbitmq_exchange')
+            rabbit_producer.close_connection()
 
 class RoomAPIView(generics.ListCreateAPIView):
     queryset = Room.objects.all()
@@ -121,7 +146,27 @@ class RentedRoomCreate(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(tenant_id=self.request.user)
+        savedData = serializer.save(tenant_id=self.request.user)
+
+        rabbit_producer = RabbitMQProducer(
+            rabbitmq_host='192.168.219.10',
+            rabbitmq_port=5672,
+            exchange_name='rabbitmq_exchange',
+            queue_name='booking_alert',
+            binding_key='booking_alert_key'
+        )
+
+        json_data = {
+            'ownerName': User.objects.get(id=savedData.tenant_id_id).first_name,
+            'roomLocation':Location.objects.get(room_id=savedData.room_id_id).name,
+            'tenant':self.request.user.first_name + ' '+ self.request.user.last_name,
+            'expectedDate':str(savedData.rented_date),
+            'offeredRent': str(savedData.offered_rent),
+            'ownerEmail':User.objects.get(id=savedData.owner_id_id).email
+        }
+
+        rabbit_producer.send_message(json_data, routing_key='booking_alert_key', exchange='rabbitmq_exchange')
+        rabbit_producer.close_connection()
 
 
 class SearchAPIView(APIView):
@@ -298,7 +343,7 @@ class AcceptBookingRequestView(APIView):
 
         tenant_user = roomBookingDetails.tenant_id
         rabbit_producer = RabbitMQProducer(
-            rabbitmq_host='192.168.56.156',
+            rabbitmq_host='192.168.219.10',
             rabbitmq_port=5672,
             exchange_name='rabbitmq_exchange',
             queue_name='booking_queue',
@@ -634,6 +679,24 @@ class GetRoomCount(APIView):
         }, status=status.HTTP_200_OK, safe=False)
 
 
+class DeleteUser(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
+    def get(self, request):
+        user = request.user
+
+        try:
+            user.delete()
+            return JsonResponse("User deleted", status=status.HTTP_200_OK, safe=False)
+        except:
+            return JsonResponse("Failed Deleting User",status=status.HTTP_500_INTERNAL_SERVER_ERROR, safe=False)
 
 ################## ADMIN VIEW END #########################
+
+class GetUserVerification(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        return JsonResponse({"userVerification":user.verification}, status=status.HTTP_200_OK, safe=False)
