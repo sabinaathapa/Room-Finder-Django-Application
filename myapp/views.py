@@ -699,3 +699,35 @@ class GetUserVerification(APIView):
         user = request.user
 
         return JsonResponse({"userVerification":user.verification}, status=status.HTTP_200_OK, safe=False)
+
+
+
+class UpdateRoomDetails(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        room_id = request.query_params.get('id')
+
+        # Get the room object based on the provided ID
+        room = get_object_or_404(Room, id=room_id)
+
+        # Update the room details based on the form data
+        room.room_type = request.data.get('room_type')
+        room.no_of_room = request.data.get('no_of_room')
+        room.bathroom_type = request.data.get('bathroom_type')
+        room.kitchen_slab = request.data.get('kitchen_slab')
+        room.rent = request.data.get('rent')
+        room.available = True
+        room.wifi = request.data.get('wifi')
+        room.water_type = request.data.get('water_type')
+        room.description = request.data.get('description')
+
+        # Save the updated room details
+        room.save()
+
+        return Response(
+            {
+                "message": "Room details updated successfully."
+            },
+            status=status.HTTP_200_OK
+        )

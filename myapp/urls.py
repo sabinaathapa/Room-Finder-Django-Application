@@ -21,6 +21,7 @@ urlpatterns = [
     path('get-profile-picture/', GetUserProfilePictureView.as_view(), name='get-profile-picture'),
     path('get-document-picture/', GetDocumentPictureView.as_view(), name='get-document-picture'),
     path('get-user-verification', GetUserVerification.as_view(), name='get-user-verification'),
+    path('update-room-details',UpdateRoomDetails.as_view(), name='update-room'),
     #Admin Page APIs
     path('admin/get-document-with-user', GetDocumentWithUser.as_view(), name='get-document-with-user'),
     path('admin/action-document',PerformActionOnDocument.as_view(), name='perform-action-on-document' ),
