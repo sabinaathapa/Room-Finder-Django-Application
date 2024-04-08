@@ -39,7 +39,7 @@ class DocumentUploadView(generics.CreateAPIView):
         document_image = self.request.FILES.get('document_image')
 
         rabbit_producer = RabbitMQProducer(
-            rabbitmq_host='192.168.219.10',
+            rabbitmq_host='192.168.56.156',
             rabbitmq_port=5672,
             exchange_name='rabbitmq_exchange',
             queue_name='document_alert',
@@ -147,7 +147,7 @@ class RentedRoomCreate(generics.ListCreateAPIView):
         savedData = serializer.save(tenant_id=self.request.user)
 
         rabbit_producer = RabbitMQProducer(
-            rabbitmq_host='192.168.219.10',
+            rabbitmq_host='192.168.56.156',
             rabbitmq_port=5672,
             exchange_name='rabbitmq_exchange',
             queue_name='booking_alert',
@@ -245,32 +245,34 @@ class GetOwnerCreatedRoomAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        userId = request.user.id
+        user_id = request.user.id
 
-        allRooms = Room.objects.filter(user_id=userId).prefetch_related()
-        print(allRooms)
-        # Convert queryset to a list of dictionaries
+        all_rooms = Room.objects.filter(user_id=user_id).prefetch_related()
         rooms_list = []
-        for room in allRooms:
-            print(room)
-            image_link = RoomImage.objects.filter(room_id=room.id).get()
-            roomLocation = Location.objects.filter(room_id=room.id).get()
 
-            rooms_list.append(
-                {'id': room.id, 'roomType': room.room_type,
-                 'noOfRooms': room.no_of_room, 'user_id': room.user_id,
-                 'bathroomType': room.bathroom_type, 'kitchenSlab': room.kitchen_slab,
-                 'wifi': room.wifi, 'waterType': room.water_type,
-                 'description': room.description, 'description': room.description,
-                 'imageLink': str(image_link.room_image),
-                 'coordinates': str(roomLocation.latitude) + ", " + str(roomLocation.longitude),
-                 'locationName': roomLocation.name
-                 }
-            )
+        for room in all_rooms:
+            image_link = RoomImage.objects.filter(room_id=room.id).first()
+            room_location = Location.objects.filter(room_id=room.id).first()
 
-        # Return the JsonResponse with a dictionary containing the list
+            if image_link and room_location:
+                image_url = str(image_link.room_image) if image_link.room_image else None
+
+                rooms_list.append({
+                    'id': room.id,
+                    'roomType': room.room_type,
+                    'noOfRooms': room.no_of_room,
+                    'user_id': room.user_id,
+                    'bathroomType': room.bathroom_type,
+                    'kitchenSlab': room.kitchen_slab,
+                    'wifi': room.wifi,
+                    'waterType': room.water_type,
+                    'description': room.description,
+                    'imageLink': image_url,
+                    'coordinates': f"{room_location.latitude}, {room_location.longitude}",
+                    'locationName': room_location.name
+                })
+
         return JsonResponse({'rooms': rooms_list}, safe=False)
-
 
 # Get the rooms booked for that owner
 class GetBookingRequestRoomAPIView(APIView):
@@ -341,7 +343,7 @@ class AcceptBookingRequestView(APIView):
 
         tenant_user = roomBookingDetails.tenant_id
         rabbit_producer = RabbitMQProducer(
-            rabbitmq_host='192.168.219.10',
+            rabbitmq_host='192.168.56.156',
             rabbitmq_port=5672,
             exchange_name='rabbitmq_exchange',
             queue_name='booking_queue',
@@ -543,18 +545,18 @@ class CancelBookingRequest(APIView):
 
 class GetAvailableRoomLocation(APIView):
     def get(self, request):
-        availableRooms = Room.objects.filter(available=True)
+        available_rooms = Room.objects.filter(available=True)
+        return_data = []
 
-        returnData = []
+        for room in available_rooms:
+            location = Location.objects.filter(room_id=room.id).first()
+            if location:
+                return_data.append({
+                    "latitude": location.latitude,
+                    "longitude": location.longitude
+                })
 
-        for each in availableRooms:
-            location = Location.objects.get(room_id=each.id)
-            returnData.append({
-                "latitude": location.latitude,
-                "longitude": location.longitude
-            })
-
-        return JsonResponse(returnData, status=status.HTTP_200_OK, safe=False)
+        return JsonResponse(return_data, status=status.HTTP_200_OK, safe=False)
 
 
 
@@ -619,9 +621,9 @@ class GetAllUserDetails(APIView):
         #Get all users with role id 1 i.e. Tenant
         allUsers = None
         if type =='tenant':
-            allUsers = User.objects.filter(role_id=1)
+            allUsers = User.objects.filter(role_id=3)
         elif type =='owner':
-            allUsers = User.objects.filter(role_id=2)
+            allUsers = User.objects.filter(role_id=4)
 
         returnData = []
 
@@ -682,13 +684,16 @@ class DeleteUser(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        user = request.user
+        user_id = request.query_params.get('userId')
 
         try:
+            user = User.objects.get(id=user_id)
             user.delete()
-            return JsonResponse("User deleted", status=status.HTTP_200_OK, safe=False)
-        except:
-            return JsonResponse("Failed Deleting User",status=status.HTTP_500_INTERNAL_SERVER_ERROR, safe=False)
+            return Response("User deleted", status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response("User not found", status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response("Failed deleting user: {}".format(str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 ################## ADMIN VIEW END #########################
 
